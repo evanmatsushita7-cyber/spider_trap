@@ -1,43 +1,45 @@
-from flask import Flask
+import random
 
+from flask import Flask
 app = Flask(__name__)
 
-@app.route("/")
-def link():
-    spiderwebs = [
-        {"name": "Weaver", "url": "golden"},
-        {"name": "Cellar", "url": "fakesite"},
-        {"name": "Jumping", "url": "notreal"},
-        {"name": "Funnel", "url": "lielielie"},
-        {"name": "Wolf", "url": "https://example.com"}
-    ]
 
-    links = ""
+def random_page():
+    links = []
 
-    for spiderweb in spiderwebs:
-        links += f'<a href="{spiderweb["url"]}">{spiderweb["name"]}</a><br>'
-
+    for i in range(5):
+        ending = random.randint(1000, 9999)
+        opener = random.choice(["weaver", "wolf", "funnel", "jumping", "cellar"])
+        page = f"{opener}{ending}"
+        links.append(f'<a href="/{page}">{page}</a><br>')
+    links = ''.join(links)
     return links
 
 
-@app.route("/golden")
-def golden():
-    return "<h1>Welcome to the Golden Web</h1>"
+@app.route("/")
+def start():
+    fakelinks = random_page()
+
+    return f"""
+    <html>
+        <body>
+            {fakelinks}
+        </body>
+    </html>
+    """
 
 
-@app.route("/fakesite")
-def fakesite():
-    return "<h1>Fake Site</h1>"
+@app.route("/<page_name>")
+def trap_site(page_name):
+    fakelinks = random_page()
 
-
-@app.route("/notreal")
-def notreal():
-    return "<h1>Not Real</h1>"
-
-
-@app.route("/lielielie")
-def lielielie():
-    return "<h1>Lie Lie Lie</h1>"
+    return f"""
+    <html>
+        <body>
+            {fakelinks}
+        </body>
+    </html>
+    """
 
 
 if __name__ == "__main__":

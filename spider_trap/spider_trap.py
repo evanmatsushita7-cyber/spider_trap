@@ -50,7 +50,7 @@ def record_request():
         request_times_by_ip[ip] = [time.time()]
 def generate_maze_links(page_name):
     maze_links = []
-    if random.random() < crosslink_chance:   # chance to cross-link
+    if random.random() < crosslink_chance:  
         page_name = random.choice(maze_prefixes)
     for _ in range(maze_links_per_page):
         random_suffix = random.randint(link_id_min, link_id_max)
@@ -80,7 +80,6 @@ def generate_decoy_links():
         decoy_path = f"{opener}{random_suffix}"
         decoy_links.append(f'<a href="/{decoy_path}">{decoy_path[-link_label_length:]}</a><br>')
     return ''.join(decoy_links)
- 
  
 @app.route("/")
 def home():
@@ -149,9 +148,6 @@ def is_flagged(ip):
     ):
         return True
     return False
- 
- 
- 
  
 @app.route("/<path:page_name>")
 def trap_site(page_name):

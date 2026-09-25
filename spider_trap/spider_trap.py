@@ -58,7 +58,7 @@ def record_request():
         request_times_by_ip[ip] = {"count": 1, "prev_time": None, "last_time": now}
 def generate_maze_links(page_name):
     maze_links = []
-    if random.random() < crosslink_chance:   # chance to cross-link
+    if random.random() < crosslink_chance:
         page_name = random.choice(maze_prefixes)
     for _ in range(maze_links_per_page):
         random_suffix = random.randint(link_id_min, link_id_max)

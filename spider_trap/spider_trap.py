@@ -7,8 +7,10 @@ from flask import request
 max_requests_per_ip = 500
 min_requests_for_rate_check = 2
 min_request_interval_seconds = 0.3
- 
 
+max_tracked_ips = 1000
+
+tarpit_delay_seconds = 5
 maze_links_per_page = 20
 decoy_links_per_page = 5
 crosslink_chance = 0.3
@@ -44,30 +46,31 @@ def log_request(ip, page_name, action, matched_keyword):
  
 def record_request():
     ip = request.remote_addr
+    now = time.time()
+    if len(request_times_by_ip) >= max_tracked_ips:
+        request_times_by_ip.clear()
     if ip in request_times_by_ip:
-        request_times_by_ip[ip].append(time.time())
+        entry = request_times_by_ip[ip]
+        entry["prev_time"] = entry["last_time"]
+        entry["last_time"] = now
+        entry["count"] += 1
     else:
-        request_times_by_ip[ip] = [time.time()]
+        request_times_by_ip[ip] = {"count": 1, "prev_time": None, "last_time": now}
 def generate_maze_links(page_name):
     maze_links = []
-    if random.random() < crosslink_chance:  
+    if random.random() < crosslink_chance:   # chance to cross-link
         page_name = random.choice(maze_prefixes)
     for _ in range(maze_links_per_page):
         random_suffix = random.randint(link_id_min, link_id_max)
+
         if page_name.count('/') > max_path_depth:
-            page_name = "dev"
-        elif page_name.startswith("dev"):
-            page_name = "wolf"
-        elif page_name.startswith("wolf"):
-            page_name = "funnel"
-        elif page_name.startswith("funnel"):
-            page_name = "cellar"
-        elif page_name.startswith("cellar"):
-            page_name = "weaver"
-        elif page_name.startswith("weaver"):
-            page_name = "dev"
- 
-        child_path = f"{page_name}/{random_suffix}"
+            link_prefix = random.choice(maze_prefixes)
+        elif random.random() < crosslink_chance:
+            link_prefix = random.choice(maze_prefixes)
+        else:
+            link_prefix = page_name
+
+        child_path = f"{link_prefix}/{random_suffix}"
         link_html = f'<a href="/{child_path}">{child_path[-link_label_length:]}</a><br>'
         maze_links.append(link_html)
     return ''.join(maze_links)
@@ -142,9 +145,13 @@ def is_flagged(ip):
         return True
     if ip not in request_times_by_ip:
         return False
-    if len(request_times_by_ip[ip]) > max_requests_per_ip or (
-        len(request_times_by_ip[ip]) >= min_requests_for_rate_check
-        and request_times_by_ip[ip][-1] - request_times_by_ip[ip][-2] < min_request_interval_seconds
+    entry = request_times_by_ip[ip]
+    if entry["count"] > max_requests_per_ip:
+        return True
+    if (
+        entry["count"] >= min_requests_for_rate_check
+        and entry["prev_time"] is not None
+        and entry["last_time"] - entry["prev_time"] < min_request_interval_seconds
     ):
         return True
     return False
@@ -162,6 +169,7 @@ def trap_site(page_name):
             suspicious = True
             matched_keyword = keyword 
             confirmed_suspicious_ips.add(ip)
+            break
     action = "spider_trap" if (already_flagged or suspicious) else "404"
     log_request(ip, page_name, action, matched_keyword)
  

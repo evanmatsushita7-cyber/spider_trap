@@ -8,7 +8,7 @@ max_requests_per_ip = 500
 min_requests_for_rate_check = 2
 min_request_interval_seconds = 0.3
  
-tarpit_delay_seconds = 5
+
 maze_links_per_page = 20
 decoy_links_per_page = 5
 crosslink_chance = 0.3
@@ -168,7 +168,7 @@ def trap_site(page_name):
     if already_flagged or suspicious:
         maze_links = generate_maze_links(page_name)
         decoy_links = generate_decoy_links()
-        time.sleep(tarpit_delay_seconds)
+        
         return f"""
         <html>
             <body>
